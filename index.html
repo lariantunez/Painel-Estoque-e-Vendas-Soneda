@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Soneda · Dashboard de Vendas</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Figtree:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #0d0f14;
+    --surface:  #141720;
+    --surface2: #1c2030;
+    --border:   #252a3a;
+    --accent:   #c8f135;
+    --accent2:  #4fffb0;
+    --muted:    #5a6080;
+    --text:     #e8ecf5;
+    --text-dim: #8891aa;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Figtree', sans-serif; font-weight: 300; min-height: 100vh; }
+
+  header { display: flex; align-items: center; justify-content: space-between; padding: 24px 40px; border-bottom: 1px solid var(--border); background: var(--surface); }
+  .logo { font-family: 'DM Serif Display', serif; font-size: 1.6rem; letter-spacing: -0.5px; }
+  .logo span { color: var(--accent); }
+  .badge { font-family: 'DM Mono', monospace; font-size: 0.72rem; color: var(--muted); background: var(--bg); border: 1px solid var(--border); padding: 4px 12px; border-radius: 20px; letter-spacing: 0.5px; }
+
+  main { max-width: 1300px; margin: 0 auto; padding: 36px 40px; }
+  .section-title { font-family: 'DM Serif Display', serif; font-size: 1.9rem; font-style: italic; margin-bottom: 6px; }
+  .section-sub { color: var(--text-dim); font-size: 0.82rem; margin-bottom: 28px; font-family: 'DM Mono', monospace; }
+
+  /* FILTERS */
+  .filters-row { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 28px; padding: 22px 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; }
+  .filter-group { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 140px; }
+  .filter-group label { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--accent); letter-spacing: 1px; text-transform: uppercase; }
+  .filter-group select,
+  .filter-group input[type="date"] {
+    background: var(--bg); border: 1px solid var(--border); color: var(--text);
+    padding: 10px 14px; border-radius: 8px; font-family: 'Figtree', sans-serif; font-size: 0.9rem;
+    cursor: pointer; transition: border-color .2s; appearance: none; -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235a6080' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px;
+  }
+  .filter-group input[type="date"] { background-image: none; padding-right: 14px; color-scheme: dark; }
+  .filter-group select:focus,
+  .filter-group input[type="date"]:focus { outline: none; border-color: var(--accent); }
+  .btn-clear { background: transparent; border: 1px solid var(--border); color: var(--text-dim); padding: 10px 20px; border-radius: 8px; cursor: pointer; font-family: 'DM Mono', monospace; font-size: 0.78rem; letter-spacing: .5px; transition: all .2s; white-space: nowrap; align-self: flex-end; }
+  .btn-clear:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* KPIs */
+  .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; position: relative; overflow: hidden; transition: border-color .2s; }
+  .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--accent), transparent); }
+  .kpi-card:hover { border-color: var(--accent); }
+  .kpi-label { font-family: 'DM Mono', monospace; font-size: 0.68rem; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+  .kpi-value { font-family: 'DM Serif Display', serif; font-size: 2rem; color: var(--accent); line-height: 1; }
+  .kpi-sub { font-size: 0.75rem; color: var(--text-dim); margin-top: 4px; }
+
+  /* CHART */
+  .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 28px 32px; }
+  .chart-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
+  .chart-title { font-family: 'DM Serif Display', serif; font-size: 1.2rem; }
+  .chart-subtitle { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--muted); margin-top: 4px; }
+  .chart-wrap { position: relative; height: 420px; }
+
+  /* TABLE */
+  .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-top: 20px; }
+  .table-head { padding: 20px 24px 12px; border-bottom: 1px solid var(--border); }
+  .table-head-title { font-family: 'DM Serif Display', serif; font-size: 1.1rem; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th { font-family: 'DM Mono', monospace; font-size: 0.68rem; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); padding: 12px 24px; text-align: left; border-bottom: 1px solid var(--border); }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background .15s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--surface2); }
+  tbody td { padding: 13px 24px; font-size: 0.88rem; }
+  .td-loja { font-family: 'DM Mono', monospace; font-size: 0.78rem; color: var(--muted); }
+  .td-nome { font-weight: 500; }
+  .td-qty { font-family: 'DM Mono', monospace; font-weight: 500; color: var(--accent2); }
+  .td-bar-wrap { display: flex; align-items: center; gap: 10px; }
+  .td-bar { height: 6px; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 3px; min-width: 4px; }
+
+  /* STATES */
+  .state-msg { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 340px; gap: 14px; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 0.82rem; text-align: center; line-height: 1.8; }
+  .spinner { width: 32px; height: 32px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .no-data { display: flex; align-items: center; justify-content: center; height: 180px; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 0.8rem; }
+  .err { color: #ff6b6b; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Soneda<span>.</span></div>
+  <div class="badge">DASHBOARD · ESTOQUE & VENDAS</div>
+</header>
+
+<main>
+  <h1 class="section-title">Vendas por Loja</h1>
+  <p class="section-sub" id="status-msg">Carregando dados da planilha...</p>
+
+  <!-- FILTROS -->
+  <div class="filters-row">
+    <div class="filter-group">
+      <label>Ano</label>
+      <select id="f-ano"><option value="">Todos</option></select>
+    </div>
+    <div class="filter-group">
+      <label>Mês</label>
+      <select id="f-mes"><option value="">Todos</option></select>
+    </div>
+    <div class="filter-group">
+      <label>Data início</label>
+      <input type="date" id="f-di">
+    </div>
+    <div class="filter-group">
+      <label>Data fim</label>
+      <input type="date" id="f-df">
+    </div>
+    <button class="btn-clear" onclick="limparFiltros()">↺ Limpar</button>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-label">Total Geral (Qtd)</div>
+      <div class="kpi-value" id="kpi-total">—</div>
+      <div class="kpi-sub">unidades vendidas</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Lojas com Venda</div>
+      <div class="kpi-value" id="kpi-lojas">—</div>
+      <div class="kpi-sub">filiais ativas no período</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Maior Filial</div>
+      <div class="kpi-value" id="kpi-top" style="font-size:1.1rem;padding-top:6px">—</div>
+      <div class="kpi-sub" id="kpi-top-sub">—</div>
+    </div>
+  </div>
+
+  <!-- GRÁFICO -->
+  <div class="chart-card">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">Quantidade Vendida por Filial</div>
+        <div class="chart-subtitle" id="chart-sub">Todos os períodos</div>
+      </div>
+    </div>
+    <div class="chart-wrap" id="chart-wrap">
+      <div class="state-msg" id="chart-state">
+        <div class="spinner"></div>
+        Carregando dados...
+      </div>
+    </div>
+  </div>
+
+  <!-- TABELA -->
+  <div class="table-card">
+    <div class="table-head"><div class="table-head-title">Detalhamento por Filial</div></div>
+    <div id="table-body"><div class="no-data">Carregando...</div></div>
+  </div>
+</main>
+
+<script>
+// ── CONFIGURAÇÃO ──────────────────────────────────────────────────────────────
+const SHEET_ID   = '1V253iG7DvSAzs8JKZCw5xkx_vaDejJIbwRiViFzD-vc';
+const GID_BRUTOS = '594179647';
+const GID_DEPARA = '742565184';
+
+let rawData   = [];
+let deParaMap = {};
+let chartInst = null;
+
+// ── CSV PARSER ────────────────────────────────────────────────────────────────
+function parseCSV(text) {
+  const lines = text.replace(/\r/g, '').split('\n');
+
+  function splitLine(line) {
+    const out = []; let cur = '', q = false;
+    for (const ch of line) {
+      if (ch === '"') { q = !q; }
+      else if (ch === ',' && !q) { out.push(cur.trim()); cur = ''; }
+      else cur += ch;
+    }
+    out.push(cur.trim());
+    return out;
+  }
+
+  // Encontra a linha de cabeçalho real: primeira linha com mais de 5 colunas preenchidas
+  let hi = 0;
+  for (let i = 0; i < Math.min(lines.length, 6); i++) {
+    if (splitLine(lines[i]).filter(c => c !== '').length > 5) { hi = i; break; }
+  }
+
+  const headers = splitLine(lines[hi]).map(h => h.replace(/^"|"$/g, ''));
+  const rows = [];
+  for (let i = hi + 1; i < lines.length; i++) {
+    const vals = splitLine(lines[i]);
+    if (vals.every(v => v === '')) continue;
+    const obj = {};
+    headers.forEach((h, idx) => { obj[h] = (vals[idx] || '').replace(/^"|"$/g, '').trim(); });
+    rows.push(obj);
+  }
+  return rows;
+}
+
+// ── FETCH CSV ─────────────────────────────────────────────────────────────────
+async function fetchCSV(gid) {
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status} — verifique se a planilha está publicada na web (Arquivo → Publicar na web).`);
+  return res.text();
+}
+
+// ── INICIALIZAÇÃO ─────────────────────────────────────────────────────────────
+async function init() {
+  try {
+    // 1. DE-PARA LOJAS
+    try {
+      const csv  = await fetchCSV(GID_DEPARA);
+      const rows = parseCSV(csv);
+      // Mostra no console para debug
+      console.log('DE-PARA primeiras linhas:', rows.slice(0,5));
+      rows.forEach(r => {
+        const vals = Object.values(r).filter(v => v !== '');
+        if (vals.length >= 2) deParaMap[String(vals[0]).trim()] = String(vals[1]).trim();
+      });
+      console.log('De-Para mapeado:', deParaMap);
+    } catch(e) {
+      console.warn('De-Para não carregado:', e.message);
+    }
+
+    // 2. DADOS BRUTOS
+    const csv = await fetchCSV(GID_BRUTOS);
+    const todas = parseCSV(csv);
+    console.log('Colunas encontradas:', Object.keys(todas[0] || {}));
+    console.log('Primeiras linhas:', todas.slice(0,3));
+
+    // Filtra apenas linhas com Ano válido (4 dígitos)
+    rawData = todas.filter(r => /^\d{4}$/.test(col(r, 'Ano')));
+
+    if (rawData.length === 0) {
+      // Tenta mostrar o que veio para diagnóstico
+      throw new Error(`Nenhuma linha válida encontrada. Colunas detectadas: ${Object.keys(todas[0]||{}).join(', ')}`);
+    }
+
+    document.getElementById('status-msg').textContent =
+      `${rawData.length.toLocaleString('pt-BR')} registros carregados · ${Object.keys(deParaMap).length} lojas no de-para`;
+
+    construirFiltros();
+    renderizar();
+
+  } catch(err) {
+    console.error(err);
+    setEstado(`<span class="err">⚠ Erro ao carregar dados:<br>${err.message}</span>`);
+    document.getElementById('status-msg').textContent = 'Erro ao carregar dados.';
+  }
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function col(row, ...nomes) {
+  for (const n of nomes) {
+    if (row[n] !== undefined && row[n] !== '') return row[n];
+  }
+  return '';
+}
+
+function setEstado(html) {
+  const el = document.getElementById('chart-state');
+  if (el) { el.style.display = 'flex'; el.innerHTML = html; }
+}
+
+function ocultarEstado() {
+  const el = document.getElementById('chart-state');
+  if (el) el.style.display = 'none';
+}
+
+// ── FILTROS ───────────────────────────────────────────────────────────────────
+function construirFiltros() {
+  const anos  = [...new Set(rawData.map(r => col(r,'Ano')).filter(Boolean))].sort();
+  const meses = [...new Set(rawData.map(r => col(r,'Mês','Mes')).filter(Boolean))];
+  const ORD   = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  meses.sort((a,b) => ORD.indexOf(a) - ORD.indexOf(b));
+
+  const sA = document.getElementById('f-ano');
+  const sM = document.getElementById('f-mes');
+  sA.innerHTML = '<option value="">Todos</option>' + anos.map(a => `<option>${a}</option>`).join('');
+  sM.innerHTML = '<option value="">Todos</option>' + meses.map(m => `<option>${m}</option>`).join('');
+
+  ['f-ano','f-mes','f-di','f-df'].forEach(id =>
+    document.getElementById(id).addEventListener('change', renderizar)
+  );
+}
+
+function limparFiltros() {
+  ['f-ano','f-mes','f-di','f-df'].forEach(id => document.getElementById(id).value = '');
+  renderizar();
+}
+
+function filtrar() {
+  const ano = document.getElementById('f-ano').value;
+  const mes = document.getElementById('f-mes').value;
+  const di  = document.getElementById('f-di').value;
+  const df  = document.getElementById('f-df').value;
+
+  return rawData.filter(r => {
+    if (ano && col(r,'Ano') !== ano) return false;
+    if (mes && col(r,'Mês','Mes') !== mes) return false;
+    if (di || df) {
+      const raw = col(r,'Data','data');
+      if (raw) {
+        // Google Sheets exporta como M/D/YYYY
+        const p = raw.split('/');
+        const dt = p.length === 3
+          ? new Date(+p[2], +p[0]-1, +p[1])
+          : new Date(raw);
+        if (!isNaN(dt)) {
+          const s = dt.toISOString().split('T')[0];
+          if (di && s < di) return false;
+          if (df && s > df) return false;
+        }
+      }
+    }
+    return true;
+  });
+}
+
+// ── AGGREGATE ─────────────────────────────────────────────────────────────────
+function agruparPorLoja(data) {
+  const map = {};
+  data.forEach(r => {
+    // Coluna N = "Loja" (número da filial do cliente)
+    const loja = col(r,'Loja','loja');
+    if (!loja) return;
+    // Coluna AE = "Venda (Qtd)"
+    const raw = col(r,'Venda (Qtd)','Venda Nf Quantidade','Venda Pdv Quantidade');
+    const qty = parseFloat(raw.replace(',','.')) || 0;
+    const key = loja.trim();
+    if (!map[key]) {
+      map[key] = {
+        loja: key,
+        nome: deParaMap[key] || `Filial ${key}`,
+        qty: 0
+      };
+    }
+    map[key].qty += qty;
+  });
+  return Object.values(map).sort((a,b) => b.qty - a.qty);
+}
+
+// ── RENDER PRINCIPAL ──────────────────────────────────────────────────────────
+function renderizar() {
+  const dados  = filtrar();
+  const byLoja = agruparPorLoja(dados);
+
+  const ano = document.getElementById('f-ano').value;
+  const mes = document.getElementById('f-mes').value;
+  document.getElementById('chart-sub').textContent =
+    [ano,mes].filter(Boolean).join(' · ') || 'Todos os períodos';
+
+  renderKPIs(byLoja);
+  renderGrafico(byLoja);
+  renderTabela(byLoja);
+}
+
+function renderKPIs(byLoja) {
+  const total  = byLoja.reduce((s,r) => s + r.qty, 0);
+  const ativas = byLoja.filter(r => r.qty > 0).length;
+  const top    = byLoja[0];
+  document.getElementById('kpi-total').textContent     = total.toLocaleString('pt-BR');
+  document.getElementById('kpi-lojas').textContent     = ativas;
+  document.getElementById('kpi-top').textContent       = top ? top.nome : '—';
+  document.getElementById('kpi-top-sub').textContent   = top ? `${top.qty.toLocaleString('pt-BR')} un.` : '—';
+}
+
+function renderGrafico(byLoja) {
+  if (byLoja.length === 0) {
+    setEstado('Nenhum dado para os filtros selecionados.');
+    return;
+  }
+  ocultarEstado();
+
+  let canvas = document.getElementById('myChart');
+  if (!canvas) {
+    canvas = document.createElement('canvas');
+    canvas.id = 'myChart';
+    document.getElementById('chart-wrap').appendChild(canvas);
+  }
+
+  const labels = byLoja.map(r => r.nome);
+  const values = byLoja.map(r => r.qty);
+  const total  = values.reduce((s,v) => s+v, 0);
+  const n      = byLoja.length;
+
+  const bgColors = byLoja.map((_,i) => {
+    const t = n > 1 ? i/(n-1) : 0;
+    return `rgba(${Math.round(200-t*80)},${Math.round(241-t*100)},${Math.round(53+t*100)},0.85)`;
+  });
+
+  if (chartInst) chartInst.destroy();
+
+  chartInst = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Qtd Vendida',
+          data: values,
+          backgroundColor: bgColors,
+          borderColor: bgColors.map(c => c.replace('0.85)','1)')),
+          borderWidth: 1.5,
+          borderRadius: 6,
+        },
+        {
+          label: `Total Geral — ${total.toLocaleString('pt-BR')} un.`,
+          data: Array(n).fill(Math.round(total / Math.max(n,1))),
+          type: 'line',
+          borderColor: 'rgba(255,255,255,0.18)',
+          borderDash: [6,4],
+          borderWidth: 1.5,
+          pointRadius: 0,
+          fill: false,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode:'index', intersect:false },
+      plugins: {
+        legend: { labels:{ color:'#8891aa', font:{family:'DM Mono',size:11}, boxWidth:12 } },
+        tooltip: {
+          backgroundColor:'#1c2030', borderColor:'#252a3a', borderWidth:1,
+          titleColor:'#c8f135', bodyColor:'#e8ecf5',
+          titleFont:{family:'DM Mono',size:11}, bodyFont:{family:'Figtree',size:13}, padding:14,
+          callbacks: {
+            label: ctx => {
+              if (ctx.datasetIndex === 0) {
+                const pct = total > 0 ? ((ctx.parsed.y/total)*100).toFixed(1) : 0;
+                return ` ${ctx.parsed.y.toLocaleString('pt-BR')} un. (${pct}% do total)`;
+              }
+              return ` Média p/ loja: ${ctx.parsed.y.toLocaleString('pt-BR')} un.`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: { ticks:{color:'#8891aa',font:{family:'DM Mono',size:11},maxRotation:35}, grid:{color:'#1c2030'} },
+        y: { ticks:{color:'#8891aa',font:{family:'DM Mono',size:11},callback:v=>v.toLocaleString('pt-BR')}, grid:{color:'#252a3a'} }
+      }
+    }
+  });
+}
+
+function renderTabela(byLoja) {
+  const container = document.getElementById('table-body');
+  const total = byLoja.reduce((s,r) => s+r.qty, 0);
+  const maxQ  = byLoja[0]?.qty || 1;
+
+  if (byLoja.length === 0) {
+    container.innerHTML = '<div class="no-data">Nenhum dado para os filtros selecionados</div>';
+    return;
+  }
+
+  const linhas = byLoja.map(r => {
+    const pct  = total > 0 ? ((r.qty/total)*100).toFixed(1) : 0;
+    const barW = ((r.qty/maxQ)*100).toFixed(1);
+    return `<tr>
+      <td class="td-loja">#${r.loja}</td>
+      <td class="td-nome">${r.nome}</td>
+      <td class="td-qty">${r.qty.toLocaleString('pt-BR')}</td>
+      <td><div class="td-bar-wrap">
+        <div class="td-bar" style="width:${barW}%;max-width:150px"></div>
+        <span style="font-size:.78rem;color:var(--text-dim);font-family:'DM Mono',monospace">${pct}%</span>
+      </div></td>
+    </tr>`;
+  }).join('');
+
+  const totalLinha = `<tr style="background:var(--surface2)">
+    <td class="td-loja">—</td>
+    <td class="td-nome" style="font-weight:600;color:var(--accent)">TOTAL GERAL</td>
+    <td class="td-qty" style="color:var(--accent)">${total.toLocaleString('pt-BR')}</td>
+    <td><span style="font-size:.78rem;color:var(--accent);font-family:'DM Mono',monospace">100%</span></td>
+  </tr>`;
+
+  container.innerHTML = `<table>
+    <thead><tr>
+      <th>Filial</th><th>Nome Fantasia</th><th>Qtd Vendida</th><th>Participação</th>
+    </tr></thead>
+    <tbody>${linhas}${totalLinha}</tbody>
+  </table>`;
+}
+
+// ── START ─────────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
