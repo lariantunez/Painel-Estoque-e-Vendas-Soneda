@@ -389,7 +389,7 @@ function renderGrafico(byLoja) {
     document.getElementById('chart-wrap').appendChild(canvas);
   }
 
-  const labels = byLoja.map(r => r.nome);
+  const labels = byLoja.map(r => `#${r.loja} · ${r.nome}`);
   const values = byLoja.map(r => r.qty);
   const total  = values.reduce((s,v) => s+v, 0);
   const n      = byLoja.length;
