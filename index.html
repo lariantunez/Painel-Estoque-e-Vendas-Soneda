@@ -137,6 +137,10 @@
       <label>Data fim</label>
       <input type="date" id="f-df">
     </div>
+    <div class="filter-group">
+      <label>Loja</label>
+      <select id="f-loja"><option value="">Todas</option></select>
+    </div>
     <button class="btn-clear" onclick="limparFiltros()">↺ Limpar</button>
   </div>
 
@@ -396,30 +400,39 @@ function construirFiltros() {
   const ORD   = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
   meses.sort((a,b) => ORD.indexOf(a) - ORD.indexOf(b));
 
+  const lojas = [...new Set(rawData.map(r => col(r,'Loja','loja')).filter(Boolean))].sort((a,b) => +a - +b);
+
   const sA = document.getElementById('f-ano');
   const sM = document.getElementById('f-mes');
+  const sL = document.getElementById('f-loja');
   sA.innerHTML = '<option value="">Todos</option>' + anos.map(a => `<option>${a}</option>`).join('');
   sM.innerHTML = '<option value="">Todos</option>' + meses.map(m => `<option>${m}</option>`).join('');
+  sL.innerHTML = '<option value="">Todas</option>' + lojas.map(l => {
+    const nome = deParaMap[l] || `Filial ${l}`;
+    return `<option value="${l}">#${l} · ${nome}</option>`;
+  }).join('');
 
-  ['f-ano','f-mes','f-di','f-df'].forEach(id =>
+  ['f-ano','f-mes','f-di','f-df','f-loja'].forEach(id =>
     document.getElementById(id).addEventListener('change', renderizar)
   );
 }
 
 function limparFiltros() {
-  ['f-ano','f-mes','f-di','f-df'].forEach(id => document.getElementById(id).value = '');
+  ['f-ano','f-mes','f-di','f-df','f-loja'].forEach(id => document.getElementById(id).value = '');
   renderizar();
 }
 
 function filtrar() {
-  const ano = document.getElementById('f-ano').value;
-  const mes = document.getElementById('f-mes').value;
-  const di  = document.getElementById('f-di').value;
-  const df  = document.getElementById('f-df').value;
+  const ano  = document.getElementById('f-ano').value;
+  const mes  = document.getElementById('f-mes').value;
+  const di   = document.getElementById('f-di').value;
+  const df   = document.getElementById('f-df').value;
+  const loja = document.getElementById('f-loja').value;
 
   return rawData.filter(r => {
-    if (ano && col(r,'Ano') !== ano) return false;
-    if (mes && col(r,'Mês','Mes') !== mes) return false;
+    if (ano  && col(r,'Ano') !== ano) return false;
+    if (mes  && col(r,'Mês','Mes') !== mes) return false;
+    if (loja && col(r,'Loja','loja') !== loja) return false;
     if (di || df) {
       const raw = col(r,'Data','data');
       if (raw) {
