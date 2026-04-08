@@ -165,9 +165,9 @@
 
 <script>
 // ── CONFIGURAÇÃO ──────────────────────────────────────────────────────────────
-const SHEET_ID   = '1V253iG7DvSAzs8JKZCw5xkx_vaDejJIbwRiViFzD-vc';
-const GID_BRUTOS = '594179647';
-const GID_DEPARA = '742565184';
+const PUBLISHED_ID = '2PACX-1vQnD-TDSWC76DBgeWdu3Jvi_AqfzSRca9Isub0y9ic0wT1JOOmIzxDhmnh-tT9b6UFHfvMlnJK1Ua4k';
+const GID_BRUTOS   = '594179647';
+const GID_DEPARA   = '742565184';
 
 let rawData   = [];
 let deParaMap = {};
@@ -208,7 +208,7 @@ function parseCSV(text) {
 
 // ── FETCH CSV ─────────────────────────────────────────────────────────────────
 async function fetchCSV(gid) {
-  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}`;
+  const url = `https://docs.google.com/spreadsheets/d/e/${PUBLISHED_ID}/pub?gid=${gid}&single=true&output=csv`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`HTTP ${res.status} — verifique se a planilha está publicada na web (Arquivo → Publicar na web).`);
   return res.text();
