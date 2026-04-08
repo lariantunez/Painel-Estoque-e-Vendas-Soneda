@@ -81,6 +81,14 @@
   .td-bar-wrap { display: flex; align-items: center; gap: 10px; }
   .td-bar { height: 6px; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 3px; min-width: 4px; }
 
+  /* TABS */
+  .tabs-nav { display: flex; gap: 0; border-bottom: 1px solid var(--border); background: var(--surface); padding: 0 40px; }
+  .tab-btn { font-family: 'DM Mono', monospace; font-size: 0.78rem; letter-spacing: 0.5px; color: var(--muted); background: none; border: none; border-bottom: 2px solid transparent; padding: 16px 24px; cursor: pointer; transition: color .2s, border-color .2s; white-space: nowrap; margin-bottom: -1px; }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
   /* STATES */
   .state-msg { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 340px; gap: 14px; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 0.82rem; text-align: center; line-height: 1.8; }
   .spinner { width: 32px; height: 32px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
@@ -96,6 +104,13 @@
   <div class="badge">ACOMPANHAMENTO DE VENDAS E ESTOQUE</div>
 </header>
 
+<nav class="tabs-nav">
+  <button class="tab-btn active" onclick="trocarAba('loja')">Vendas por Loja</button>
+  <button class="tab-btn" onclick="trocarAba('dia')">Venda por Dia</button>
+</nav>
+
+<!-- ABA 1: VENDAS POR LOJA -->
+<div id="tab-loja" class="tab-panel active">
 <main>
   <h1 class="section-title">Vendas por Loja</h1>
   <p class="section-sub" id="status-msg">Carregando dados da planilha...</p>
@@ -168,6 +183,17 @@
     <div id="table-body"><div class="no-data">Carregando...</div></div>
   </div>
 </main>
+</div>
+<!-- /ABA 1 -->
+
+<!-- ABA 2: VENDA POR DIA -->
+<div id="tab-dia" class="tab-panel">
+<main>
+  <h1 class="section-title">Venda por Dia</h1>
+  <p class="section-sub">Em construção...</p>
+</main>
+</div>
+<!-- /ABA 2 -->
 
 <script>
 // ── CONFIGURAÇÃO ──────────────────────────────────────────────────────────────
@@ -547,6 +573,14 @@ function renderTabela(byLoja) {
     </tr></thead>
     <tbody>${linhas}${totalLinha}</tbody>
   </table>`;
+}
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+function trocarAba(aba) {
+  document.querySelectorAll('.tab-panel').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + aba).classList.add('active');
+  document.querySelector(`.tab-btn[onclick="trocarAba('${aba}')"]`).classList.add('active');
 }
 
 // ── START ─────────────────────────────────────────────────────────────────────
