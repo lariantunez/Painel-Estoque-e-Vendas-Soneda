@@ -111,6 +111,7 @@
 <nav class="tabs-nav">
   <button class="tab-btn active" onclick="trocarAba('loja')">Vendas por Loja</button>
   <button class="tab-btn" onclick="trocarAba('dia')">Venda por Dia</button>
+  <button class="tab-btn" onclick="trocarAba('estoque')">Estoque</button>
 </nav>
 
 <!-- ABA 1: VENDAS POR LOJA -->
@@ -140,6 +141,10 @@
     <div class="filter-group">
       <label>Loja</label>
       <select id="f-loja"><option value="">Todas</option></select>
+    </div>
+    <div class="filter-group">
+      <label>Categoria</label>
+      <select id="f-cat"><option value="">Todas</option></select>
     </div>
     <button class="btn-clear" onclick="limparFiltros()">↺ Limpar</button>
   </div>
@@ -190,6 +195,25 @@
     <div class="table-head"><div class="table-head-title">Detalhamento de Quantidade Vendida por Filial</div></div>
     <div id="table-body"><div class="no-data">Carregando...</div></div>
   </div>
+
+  <!-- GRÁFICO CATEGORIAS -->
+  <div class="chart-card" style="margin-top:20px">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">Categorias Mais Vendidas</div>
+        <div class="chart-subtitle" id="cat1-sub">Todos os períodos</div>
+      </div>
+    </div>
+    <div class="chart-wrap" id="cat1-wrap" style="height:360px">
+      <div class="state-msg" id="cat1-state"><div class="spinner"></div>Carregando...</div>
+    </div>
+  </div>
+
+  <!-- TABELA CATEGORIAS -->
+  <div class="table-card" style="margin-top:20px">
+    <div class="table-head"><div class="table-head-title">Detalhamento por Categoria</div></div>
+    <div id="cat1-table-body"><div class="no-data">Carregando...</div></div>
+  </div>
 </main>
 </div>
 <!-- /ABA 1 -->
@@ -221,6 +245,10 @@
     <div class="filter-group">
       <label>Loja</label>
       <select id="d2-loja"><option value="">Todas</option></select>
+    </div>
+    <div class="filter-group">
+      <label>Categoria</label>
+      <select id="d2-cat"><option value="">Todas</option></select>
     </div>
     <button class="btn-clear" onclick="d2LimparFiltros()">↺ Limpar</button>
   </div>
@@ -270,22 +298,145 @@
     <div class="table-head"><div class="table-head-title">Detalhamento de Quantidade Vendida por Dia</div></div>
     <div id="d2-table-body"><div class="no-data">Carregando...</div></div>
   </div>
+
+  <!-- GRÁFICO CATEGORIAS POR DIA -->
+  <div class="chart-card" style="margin-top:20px">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">Vendas por Categoria ao Longo do Tempo</div>
+        <div class="chart-subtitle" id="cat2-sub">Todos os períodos · Todas as lojas</div>
+      </div>
+    </div>
+    <div class="chart-wrap" id="cat2-wrap" style="height:380px">
+      <div class="state-msg" id="cat2-state"><div class="spinner"></div>Carregando...</div>
+    </div>
+  </div>
+
+  <!-- TABELA CATEGORIAS -->
+  <div class="table-card" style="margin-top:20px">
+    <div class="table-head"><div class="table-head-title">Detalhamento por Categoria</div></div>
+    <div id="cat2-table-body"><div class="no-data">Carregando...</div></div>
+  </div>
 </main>
 </div>
 <!-- /ABA 2 -->
+
+<!-- ABA 3: ESTOQUE -->
+<div id="tab-estoque" class="tab-panel">
+<main>
+  <h1 class="section-title">Estoque</h1>
+  <p class="section-sub" id="d3-status-msg">Carregando dados...</p>
+
+  <!-- FILTROS -->
+  <div class="filters-row">
+    <div class="filter-group">
+      <label>Ano</label>
+      <select id="d3-ano"><option value="">Todos</option></select>
+    </div>
+    <div class="filter-group">
+      <label>Mês</label>
+      <select id="d3-mes"><option value="">Todos</option></select>
+    </div>
+    <div class="filter-group">
+      <label>Data início</label>
+      <input type="date" id="d3-di">
+    </div>
+    <div class="filter-group">
+      <label>Data fim</label>
+      <input type="date" id="d3-df">
+    </div>
+    <div class="filter-group">
+      <label>Loja</label>
+      <select id="d3-loja"><option value="">Todas</option></select>
+    </div>
+    <div class="filter-group">
+      <label>Categoria</label>
+      <select id="d3-cat"><option value="">Todas</option></select>
+    </div>
+    <button class="btn-clear" onclick="d3LimparFiltros()">↺ Limpar</button>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-label">Estoque Total (Qtd)</div>
+      <div class="kpi-value" id="d3-kpi-total">—</div>
+      <div class="kpi-sub">unidades em estoque</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Lojas com Estoque</div>
+      <div class="kpi-value" id="d3-kpi-lojas">—</div>
+      <div class="kpi-sub">filiais com saldo positivo</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Maior Estoque</div>
+      <div class="kpi-value" id="d3-kpi-top" style="font-size:1.1rem;padding-top:6px">—</div>
+      <div class="kpi-sub" id="d3-kpi-top-sub">—</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Menor Estoque</div>
+      <div class="kpi-value" id="d3-kpi-bot" style="font-size:1.1rem;padding-top:6px">—</div>
+      <div class="kpi-sub" id="d3-kpi-bot-sub">—</div>
+    </div>
+  </div>
+
+  <!-- GRÁFICO ESTOQUE POR LOJA -->
+  <div class="chart-card">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">Estoque Diário por Loja</div>
+        <div class="chart-subtitle" id="d3-chart-sub">Todos os períodos · Todas as lojas</div>
+      </div>
+    </div>
+    <div class="chart-wrap" id="d3-chart-wrap" style="height:420px">
+      <div class="state-msg" id="d3-chart-state"><div class="spinner"></div>Carregando dados...</div>
+    </div>
+  </div>
+
+  <!-- GRÁFICO ESTOQUE POR DIA (linha temporal) -->
+  <div class="chart-card" style="margin-top:20px">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">Evolução do Estoque ao Longo do Tempo</div>
+        <div class="chart-subtitle" id="d3-line-sub">Todos os períodos · Todas as lojas</div>
+      </div>
+    </div>
+    <div class="chart-wrap" id="d3-line-wrap" style="height:380px">
+      <div class="state-msg" id="d3-line-state"><div class="spinner"></div>Carregando dados...</div>
+    </div>
+  </div>
+
+  <!-- TABELA -->
+  <div class="table-card" style="margin-top:20px">
+    <div class="table-head"><div class="table-head-title">Detalhamento de Estoque por Filial</div></div>
+    <div id="d3-table-body"><div class="no-data">Carregando...</div></div>
+  </div>
+</main>
+</div>
+<!-- /ABA 3 -->
 
 <script>
 // ── CONFIGURAÇÃO ──────────────────────────────────────────────────────────────
 const PUBLISHED_ID = '2PACX-1vQnD-TDSWC76DBgeWdu3Jvi_AqfzSRca9Isub0y9ic0wT1JOOmIzxDhmnh-tT9b6UFHfvMlnJK1Ua4k';
 const GID_BRUTOS   = '594179647';
 const GID_DEPARA   = '742565184';
+const GID_CAT      = '1807120713';
 
 let rawData      = [];
 let deParaMap    = {};
+let catMap       = {}; // código categoria → nome
 let chartInst    = null;
+let cat1Chart    = null;
+let cat2Chart    = null;
+let d3BarChart   = null;
+let d3LineChart  = null;
 let lojaFiltrada = null;
 let t1Sort       = { col: 'qty', dir: 'desc' };
 let t2Sort       = { col: 'qty', dir: 'desc' };
+let t3Sort       = { col: 'qty', dir: 'desc' };
+
+// paleta multi-série
+const PALETTE = ['#c8f135','#4fffb0','#38bdf8','#f472b6','#fb923c','#a78bfa','#facc15','#34d399','#f87171','#60a5fa','#e879f9','#fbbf24'];
 
 // ── CSV PARSER ────────────────────────────────────────────────────────────────
 function parseCSV(text) {
@@ -335,16 +486,22 @@ async function init() {
     try {
       const csv  = await fetchCSV(GID_DEPARA);
       const rows = parseCSV(csv);
-      // Mostra no console para debug
-      console.log('DE-PARA primeiras linhas:', rows.slice(0,5));
       rows.forEach(r => {
         const vals = Object.values(r).filter(v => v !== '');
         if (vals.length >= 2) deParaMap[String(vals[0]).trim()] = String(vals[1]).trim();
       });
-      console.log('De-Para mapeado:', deParaMap);
-    } catch(e) {
-      console.warn('De-Para não carregado:', e.message);
-    }
+    } catch(e) { console.warn('De-Para não carregado:', e.message); }
+
+    // 1b. CATEGORIAS
+    try {
+      const csv  = await fetchCSV(GID_CAT);
+      const rows = parseCSV(csv);
+      rows.forEach(r => {
+        const vals = Object.values(r).filter(v => v !== '');
+        if (vals.length >= 2) catMap[String(vals[0]).trim()] = String(vals[1]).trim();
+        else if (vals.length === 1) catMap[String(vals[0]).trim()] = String(vals[0]).trim();
+      });
+    } catch(e) { console.warn('Categorias não carregadas:', e.message); }
 
     // 2. DADOS BRUTOS
     const csv = await fetchCSV(GID_BRUTOS);
@@ -367,6 +524,8 @@ async function init() {
     renderizar();
     d2ConstruirFiltros();
     d2Renderizar();
+    d3ConstruirFiltros();
+    d3Renderizar();
 
   } catch(err) {
     console.error(err);
@@ -401,24 +560,27 @@ function construirFiltros() {
   meses.sort((a,b) => ORD.indexOf(a) - ORD.indexOf(b));
 
   const lojas = [...new Set(rawData.map(r => col(r,'Loja','loja')).filter(Boolean))].sort((a,b) => +a - +b);
+  const cats  = [...new Set(rawData.map(r => col(r,'Categoria','categoria','Kert','kert')).filter(Boolean))].sort();
 
   const sA = document.getElementById('f-ano');
   const sM = document.getElementById('f-mes');
   const sL = document.getElementById('f-loja');
+  const sC = document.getElementById('f-cat');
   sA.innerHTML = '<option value="">Todos</option>' + anos.map(a => `<option>${a}</option>`).join('');
   sM.innerHTML = '<option value="">Todos</option>' + meses.map(m => `<option>${m}</option>`).join('');
   sL.innerHTML = '<option value="">Todas</option>' + lojas.map(l => {
     const nome = deParaMap[l] || `Filial ${l}`;
     return `<option value="${l}">#${l} · ${nome}</option>`;
   }).join('');
+  sC.innerHTML = '<option value="">Todas</option>' + cats.map(c => `<option value="${c}">${c}</option>`).join('');
 
-  ['f-ano','f-mes','f-di','f-df','f-loja'].forEach(id =>
+  ['f-ano','f-mes','f-di','f-df','f-loja','f-cat'].forEach(id =>
     document.getElementById(id).addEventListener('change', renderizar)
   );
 }
 
 function limparFiltros() {
-  ['f-ano','f-mes','f-di','f-df','f-loja'].forEach(id => document.getElementById(id).value = '');
+  ['f-ano','f-mes','f-di','f-df','f-loja','f-cat'].forEach(id => document.getElementById(id).value = '');
   renderizar();
 }
 
@@ -428,11 +590,13 @@ function filtrar() {
   const di   = document.getElementById('f-di').value;
   const df   = document.getElementById('f-df').value;
   const loja = document.getElementById('f-loja').value;
+  const cat  = document.getElementById('f-cat').value;
 
   return rawData.filter(r => {
     if (ano  && col(r,'Ano') !== ano) return false;
     if (mes  && col(r,'Mês','Mes') !== mes) return false;
     if (loja && col(r,'Loja','loja') !== loja) return false;
+    if (cat  && col(r,'Categoria','categoria','Kert','kert') !== cat) return false;
     if (di || df) {
       const raw = col(r,'Data','data');
       if (raw) {
@@ -507,6 +671,7 @@ function renderizar() {
   renderKPIs(byLojaFiltrada);
   renderGrafico(byLojaAll);
   renderTabela(byLojaFiltrada);
+  renderCat1(filtrar());
 }
 
 function limparFiltroLoja() {
@@ -628,6 +793,87 @@ function renderGrafico(byLoja) {
   canvas.style.cursor = 'pointer';
 }
 
+function agruparPorCategoria(data) {
+  const map = {};
+  data.forEach(r => {
+    const cat = col(r,'Categoria','categoria','Kert','kert') || 'Sem categoria';
+    const qty = parseFloat(col(r,'Venda (Qtd)','Venda Nf Quantidade','Venda Pdv Quantidade').replace(',','.')) || 0;
+    if (!map[cat]) map[cat] = { cat, qty: 0 };
+    map[cat].qty += qty;
+  });
+  return Object.values(map).sort((a,b) => b.qty - a.qty);
+}
+
+function renderCat1(data) {
+  const byCat = agruparPorCategoria(data);
+  const total = byCat.reduce((s,r) => s + r.qty, 0);
+  const n     = byCat.length;
+
+  const ano = document.getElementById('f-ano').value;
+  const mes = document.getElementById('f-mes').value;
+  document.getElementById('cat1-sub').textContent = [ano,mes].filter(Boolean).join(' · ') || 'Todos os períodos';
+
+  const state = document.getElementById('cat1-state');
+  if (byCat.length === 0) { if(state) { state.style.display='flex'; state.innerHTML='Nenhum dado.'; } return; }
+  if (state) state.style.display = 'none';
+
+  let canvas = document.getElementById('cat1-canvas');
+  if (!canvas) {
+    canvas = document.createElement('canvas');
+    canvas.id = 'cat1-canvas';
+    document.getElementById('cat1-wrap').appendChild(canvas);
+  }
+  if (cat1Chart) cat1Chart.destroy();
+
+  cat1Chart = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: byCat.map(r => r.cat),
+      datasets: [{
+        data: byCat.map(r => r.qty),
+        backgroundColor: byCat.map((_,i) => PALETTE[i % PALETTE.length] + 'cc'),
+        borderColor:     byCat.map((_,i) => PALETTE[i % PALETTE.length]),
+        borderWidth: 1.5, borderRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor:'#1c2030', borderColor:'#252a3a', borderWidth:1,
+          titleColor:'#c8f135', bodyColor:'#e8ecf5',
+          titleFont:{family:'DM Mono',size:11}, bodyFont:{family:'Figtree',size:13}, padding:14,
+          callbacks: { label: ctx => ` ${ctx.parsed.y.toLocaleString('pt-BR')} unidades` }
+        }
+      },
+      scales: {
+        x: { ticks:{ color:'#8891aa', font:{family:'DM Mono',size:9}, maxRotation:35, autoSkip:false }, grid:{color:'#1c2030'} },
+        y: { ticks:{ color:'#8891aa', font:{family:'DM Mono',size:11}, callback:v=>v.toLocaleString('pt-BR') }, grid:{color:'#252a3a'} }
+      }
+    }
+  });
+
+  // tabela categorias aba1
+  const maxQ = byCat[0]?.qty || 1;
+  const linhas = byCat.map(r => {
+    const pct  = total > 0 ? ((r.qty/total)*100).toFixed(1) : 0;
+    const barW = ((r.qty/maxQ)*100).toFixed(1);
+    return `<tr>
+      <td class="td-nome">${r.cat}</td>
+      <td class="td-qty">${r.qty.toLocaleString('pt-BR')}</td>
+      <td><div class="td-bar-wrap">
+        <div class="td-bar" style="width:${barW}%;max-width:150px"></div>
+        <span style="font-size:.78rem;color:var(--text-dim);font-family:'DM Mono',monospace">${pct}%</span>
+      </div></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('cat1-table-body').innerHTML = `<table>
+    <thead><tr><th>Categoria</th><th>Qtd Vendida</th><th>Participação</th></tr></thead>
+    <tbody>${linhas}</tbody>
+  </table>`;
+}
+
 function t1OrdenarPor(coluna) {
   t1Sort.dir = t1Sort.col === coluna && t1Sort.dir === 'desc' ? 'asc' : 'desc';
   t1Sort.col = coluna;
@@ -699,6 +945,7 @@ function d2ConstruirFiltros() {
   meses.sort((a,b) => ORD.indexOf(a) - ORD.indexOf(b));
 
   const lojas = [...new Set(rawData.map(r => col(r,'Loja','loja')).filter(Boolean))].sort((a,b) => +a - +b);
+  const cats  = [...new Set(rawData.map(r => col(r,'Categoria','categoria','Kert','kert')).filter(Boolean))].sort();
 
   document.getElementById('d2-ano').innerHTML  = '<option value="">Todos</option>' + anos.map(a => `<option>${a}</option>`).join('');
   document.getElementById('d2-mes').innerHTML  = '<option value="">Todos</option>' + meses.map(m => `<option>${m}</option>`).join('');
@@ -706,8 +953,9 @@ function d2ConstruirFiltros() {
     const nome = deParaMap[l] || `Filial ${l}`;
     return `<option value="${l}">#${l} · ${nome}</option>`;
   }).join('');
+  document.getElementById('d2-cat').innerHTML  = '<option value="">Todas</option>' + cats.map(c => `<option value="${c}">${c}</option>`).join('');
 
-  ['d2-ano','d2-mes','d2-di','d2-df','d2-loja'].forEach(id =>
+  ['d2-ano','d2-mes','d2-di','d2-df','d2-loja','d2-cat'].forEach(id =>
     document.getElementById(id).addEventListener('change', d2Renderizar)
   );
 
@@ -716,7 +964,7 @@ function d2ConstruirFiltros() {
 }
 
 function d2LimparFiltros() {
-  ['d2-ano','d2-mes','d2-di','d2-df','d2-loja'].forEach(id => document.getElementById(id).value = '');
+  ['d2-ano','d2-mes','d2-di','d2-df','d2-loja','d2-cat'].forEach(id => document.getElementById(id).value = '');
   d2Renderizar();
 }
 
@@ -726,11 +974,13 @@ function d2Filtrar() {
   const di   = document.getElementById('d2-di').value;
   const df   = document.getElementById('d2-df').value;
   const loja = document.getElementById('d2-loja').value;
+  const cat  = document.getElementById('d2-cat').value;
 
   return rawData.filter(r => {
     if (ano  && col(r,'Ano') !== ano) return false;
     if (mes  && col(r,'Mês','Mes') !== mes) return false;
     if (loja && col(r,'Loja','loja') !== loja) return false;
+    if (cat  && col(r,'Categoria','categoria','Kert','kert') !== cat) return false;
     if (di || df) {
       const raw = col(r,'Data','data');
       if (raw) {
@@ -927,12 +1177,329 @@ function d2Renderizar() {
     <thead><tr>${th2('Data','data')}${th2('Dia','dia')}${th2('Qtd Vendida','qty')}<th>Participação</th></tr></thead>
     <tbody>${linhas}${totalLinha}</tbody>
   </table>`;
+
+  renderCat2(dados);
+}
+
+function renderCat2(data) {
+  const cat  = document.getElementById('d2-cat').value;
+  const loja = document.getElementById('d2-loja').value;
+  const ano  = document.getElementById('d2-ano').value;
+  const mes  = document.getElementById('d2-mes').value;
+  const nomeLoja = loja ? (document.getElementById('d2-loja').selectedOptions[0]?.text || '') : 'Todas as lojas';
+  document.getElementById('cat2-sub').textContent = ([ano,mes].filter(Boolean).join(' · ') || 'Todos os períodos') + ' · ' + nomeLoja;
+
+  // agrupa por categoria → por dia
+  const cats = [...new Set(data.map(r => col(r,'Categoria','categoria','Kert','kert')).filter(Boolean))].sort();
+  const dias  = [...new Set(data.map(r => {
+    const dt = d2ParseData(col(r,'Data','data'));
+    return dt ? dt.toISOString().split('T')[0] : null;
+  }).filter(Boolean))].sort();
+
+  const state2 = document.getElementById('cat2-state');
+  if (cats.length === 0 || dias.length === 0) {
+    if(state2) { state2.style.display='flex'; state2.innerHTML='Nenhum dado.'; }
+    document.getElementById('cat2-table-body').innerHTML = '<div class="no-data">Nenhum dado</div>';
+    return;
+  }
+  if(state2) state2.style.display = 'none';
+
+  const mapCatDia = {};
+  data.forEach(r => {
+    const c  = col(r,'Categoria','categoria','Kert','kert'); if (!c) return;
+    const dt = d2ParseData(col(r,'Data','data')); if (!dt) return;
+    const dk = dt.toISOString().split('T')[0];
+    const qty = parseFloat(col(r,'Venda (Qtd)','Venda Nf Quantidade','Venda Pdv Quantidade').replace(',','.')) || 0;
+    if (!mapCatDia[c]) mapCatDia[c] = {};
+    mapCatDia[c][dk] = (mapCatDia[c][dk] || 0) + qty;
+  });
+
+  let canvas2 = document.getElementById('cat2-canvas');
+  if (!canvas2) {
+    canvas2 = document.createElement('canvas');
+    canvas2.id = 'cat2-canvas';
+    document.getElementById('cat2-wrap').appendChild(canvas2);
+  }
+  if (cat2Chart) cat2Chart.destroy();
+
+  cat2Chart = new Chart(canvas2, {
+    type: 'line',
+    data: {
+      labels: dias.map(d2FormatarData),
+      datasets: cats.map((c, i) => ({
+        label: c,
+        data: dias.map(d => mapCatDia[c]?.[d] || 0),
+        borderColor: PALETTE[i % PALETTE.length],
+        backgroundColor: PALETTE[i % PALETTE.length] + '22',
+        borderWidth: 2, pointRadius: dias.length <= 60 ? 2 : 0,
+        pointHoverRadius: 4, tension: 0.3, fill: false,
+      }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode:'index', intersect:false },
+      plugins: {
+        legend: { labels:{ color:'#8891aa', font:{family:'DM Mono',size:10}, boxWidth:10 } },
+        tooltip: {
+          backgroundColor:'#1c2030', borderColor:'#252a3a', borderWidth:1,
+          titleColor:'#c8f135', bodyColor:'#e8ecf5',
+          titleFont:{family:'DM Mono',size:11}, bodyFont:{family:'Figtree',size:12}, padding:12,
+        }
+      },
+      scales: {
+        x: { ticks:{ color:'#8891aa', font:{family:'DM Mono',size:9}, maxRotation:45, minRotation:45, autoSkip:true, maxTicksLimit:30 }, grid:{color:'#1c2030'} },
+        y: { ticks:{ color:'#8891aa', font:{family:'DM Mono',size:11}, callback:v=>v.toLocaleString('pt-BR') }, grid:{color:'#252a3a'} }
+      }
+    }
+  });
+
+  // tabela resumo por categoria
+  const totCat = cats.map(c => ({ cat: c, qty: Object.values(mapCatDia[c] || {}).reduce((s,v)=>s+v,0) })).sort((a,b)=>b.qty-a.qty);
+  const totalGeral = totCat.reduce((s,r)=>s+r.qty,0);
+  const maxQ = totCat[0]?.qty || 1;
+  const linhas = totCat.map(r => {
+    const pct  = totalGeral > 0 ? ((r.qty/totalGeral)*100).toFixed(1) : 0;
+    const barW = ((r.qty/maxQ)*100).toFixed(1);
+    return `<tr>
+      <td class="td-nome">${r.cat}</td>
+      <td class="td-qty">${r.qty.toLocaleString('pt-BR')}</td>
+      <td><div class="td-bar-wrap">
+        <div class="td-bar" style="width:${barW}%;max-width:150px"></div>
+        <span style="font-size:.78rem;color:var(--text-dim);font-family:'DM Mono',monospace">${pct}%</span>
+      </div></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('cat2-table-body').innerHTML = `<table>
+    <thead><tr><th>Categoria</th><th>Qtd Vendida</th><th>Participação</th></tr></thead>
+    <tbody>${linhas}</tbody>
+  </table>`;
 }
 
 function t2OrdenarPor(coluna) {
   t2Sort.dir = t2Sort.col === coluna && t2Sort.dir === 'desc' ? 'asc' : 'desc';
   t2Sort.col = coluna;
   d2Renderizar();
+}
+
+// ── ABA 3: ESTOQUE ────────────────────────────────────────────────────────────
+function d3ConstruirFiltros() {
+  const anos  = [...new Set(rawData.map(r => col(r,'Ano')).filter(Boolean))].sort();
+  const meses = [...new Set(rawData.map(r => col(r,'Mês','Mes')).filter(Boolean))];
+  const ORD   = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  meses.sort((a,b) => ORD.indexOf(a) - ORD.indexOf(b));
+  const lojas = [...new Set(rawData.map(r => col(r,'Loja','loja')).filter(Boolean))].sort((a,b) => +a - +b);
+  const cats  = [...new Set(rawData.map(r => col(r,'Categoria','categoria','Kert','kert')).filter(Boolean))].sort();
+
+  document.getElementById('d3-ano').innerHTML  = '<option value="">Todos</option>' + anos.map(a => `<option>${a}</option>`).join('');
+  document.getElementById('d3-mes').innerHTML  = '<option value="">Todos</option>' + meses.map(m => `<option>${m}</option>`).join('');
+  document.getElementById('d3-loja').innerHTML = '<option value="">Todas</option>' + lojas.map(l => {
+    const nome = deParaMap[l] || `Filial ${l}`;
+    return `<option value="${l}">#${l} · ${nome}</option>`;
+  }).join('');
+  document.getElementById('d3-cat').innerHTML  = '<option value="">Todas</option>' + cats.map(c => `<option value="${c}">${c}</option>`).join('');
+
+  ['d3-ano','d3-mes','d3-di','d3-df','d3-loja','d3-cat'].forEach(id =>
+    document.getElementById(id).addEventListener('change', d3Renderizar)
+  );
+  document.getElementById('d3-status-msg').textContent = document.getElementById('status-msg').textContent;
+}
+
+function d3LimparFiltros() {
+  ['d3-ano','d3-mes','d3-di','d3-df','d3-loja','d3-cat'].forEach(id => document.getElementById(id).value = '');
+  d3Renderizar();
+}
+
+function d3Filtrar() {
+  const ano  = document.getElementById('d3-ano').value;
+  const mes  = document.getElementById('d3-mes').value;
+  const di   = document.getElementById('d3-di').value;
+  const df   = document.getElementById('d3-df').value;
+  const loja = document.getElementById('d3-loja').value;
+  const cat  = document.getElementById('d3-cat').value;
+
+  return rawData.filter(r => {
+    if (ano  && col(r,'Ano') !== ano) return false;
+    if (mes  && col(r,'Mês','Mes') !== mes) return false;
+    if (loja && col(r,'Loja','loja') !== loja) return false;
+    if (cat  && col(r,'Categoria','categoria','Kert','kert') !== cat) return false;
+    if (di || df) {
+      const raw = col(r,'Data','data');
+      if (raw) {
+        const p  = raw.split('/');
+        const dt = p.length === 3 ? new Date(+p[2], +p[0]-1, +p[1]) : new Date(raw);
+        if (!isNaN(dt)) {
+          const s = dt.toISOString().split('T')[0];
+          if (di && s < di) return false;
+          if (df && s > df) return false;
+        }
+      }
+    }
+    return true;
+  });
+}
+
+function d3Renderizar() {
+  const dados = d3Filtrar();
+  const ano   = document.getElementById('d3-ano').value;
+  const mes   = document.getElementById('d3-mes').value;
+  const loja  = document.getElementById('d3-loja').value;
+  const nomeLoja = loja ? (document.getElementById('d3-loja').selectedOptions[0]?.text || '') : 'Todas as lojas';
+  const periodo  = ([ano,mes].filter(Boolean).join(' · ') || 'Todos os períodos') + ' · ' + nomeLoja;
+  document.getElementById('d3-chart-sub').textContent = periodo;
+  document.getElementById('d3-line-sub').textContent  = periodo;
+
+  // agrupa estoque por loja (último valor do período)
+  const mapLoja = {};
+  dados.forEach(r => {
+    const l   = col(r,'Loja','loja'); if (!l) return;
+    const est = parseFloat(col(r,'Estoque Diario','Estoque Diário','Estoque','estoque').replace(',','.')) || 0;
+    const dt  = d2ParseData(col(r,'Data','data'));
+    const key = l.trim();
+    if (!mapLoja[key]) mapLoja[key] = { loja: key, nome: deParaMap[key] || `Filial ${key}`, qty: 0, dt: null };
+    // usa o valor mais recente
+    if (!mapLoja[key].dt || (dt && dt > mapLoja[key].dt)) {
+      mapLoja[key].qty = est;
+      mapLoja[key].dt  = dt;
+    }
+  });
+
+  const byLoja = Object.values(mapLoja).sort((a,b) => b.qty - a.qty);
+  const total  = byLoja.reduce((s,r) => s + r.qty, 0);
+  const ativas = byLoja.filter(r => r.qty > 0).length;
+  const top    = byLoja[0];
+  const bot    = byLoja.filter(r => r.qty > 0).slice(-1)[0];
+
+  // KPIs
+  document.getElementById('d3-kpi-total').textContent   = total.toLocaleString('pt-BR');
+  document.getElementById('d3-kpi-lojas').textContent   = ativas;
+  document.getElementById('d3-kpi-top').textContent     = top ? top.nome : '—';
+  document.getElementById('d3-kpi-top-sub').textContent = top ? `${top.qty.toLocaleString('pt-BR')} un.` : '—';
+  document.getElementById('d3-kpi-bot').textContent     = bot ? bot.nome : '—';
+  document.getElementById('d3-kpi-bot-sub').textContent = bot ? `${bot.qty.toLocaleString('pt-BR')} un.` : '—';
+
+  // Gráfico barras por loja
+  const barState = document.getElementById('d3-chart-state');
+  if (byLoja.length === 0) {
+    if(barState) { barState.style.display='flex'; barState.innerHTML='Nenhum dado.'; }
+  } else {
+    if(barState) barState.style.display = 'none';
+    let c1 = document.getElementById('d3-bar-canvas');
+    if (!c1) { c1 = document.createElement('canvas'); c1.id = 'd3-bar-canvas'; document.getElementById('d3-chart-wrap').appendChild(c1); }
+    if (d3BarChart) d3BarChart.destroy();
+    const n = byLoja.length;
+    d3BarChart = new Chart(c1, {
+      type: 'bar',
+      data: {
+        labels: byLoja.map(r => r.nome),
+        datasets: [{
+          data: byLoja.map(r => r.qty),
+          backgroundColor: byLoja.map((_,i) => { const t=n>1?i/(n-1):0; return `rgba(${Math.round(79+t*121)},${Math.round(255-t*145)},${Math.round(176-t*123)},0.85)`; }),
+          borderColor:     byLoja.map((_,i) => { const t=n>1?i/(n-1):0; return `rgba(${Math.round(79+t*121)},${Math.round(255-t*145)},${Math.round(176-t*123)},1)`; }),
+          borderWidth: 1.5, borderRadius: 6,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { backgroundColor:'#1c2030', borderColor:'#252a3a', borderWidth:1, titleColor:'#4fffb0', bodyColor:'#e8ecf5', titleFont:{family:'DM Mono',size:11}, bodyFont:{family:'Figtree',size:13}, padding:14,
+            callbacks: { label: ctx => ` ${ctx.parsed.y.toLocaleString('pt-BR')} unidades em estoque` }
+          }
+        },
+        scales: {
+          x: { ticks:{ color:'#8891aa', font:{family:'DM Mono',size:9}, maxRotation:45, minRotation:45, autoSkip:false }, grid:{color:'#1c2030'} },
+          y: { ticks:{ color:'#8891aa', font:{family:'DM Mono',size:11}, callback:v=>v.toLocaleString('pt-BR') }, grid:{color:'#252a3a'} }
+        }
+      }
+    });
+  }
+
+  // Gráfico linha: evolução estoque por dia (por loja selecionada ou total geral)
+  const dias = [...new Set(dados.map(r => { const dt=d2ParseData(col(r,'Data','data')); return dt?dt.toISOString().split('T')[0]:null; }).filter(Boolean))].sort();
+  const lojas = loja ? [loja] : [...new Set(dados.map(r=>col(r,'Loja','loja')).filter(Boolean))].sort((a,b)=>+a-+b).slice(0,10);
+
+  const lineState = document.getElementById('d3-line-state');
+  if (dias.length === 0) {
+    if(lineState) { lineState.style.display='flex'; lineState.innerHTML='Nenhum dado.'; }
+  } else {
+    if(lineState) lineState.style.display = 'none';
+    const mapLD = {};
+    dados.forEach(r => {
+      const l   = col(r,'Loja','loja'); if (!l || !lojas.includes(l)) return;
+      const dt  = d2ParseData(col(r,'Data','data')); if (!dt) return;
+      const dk  = dt.toISOString().split('T')[0];
+      const est = parseFloat(col(r,'Estoque Diario','Estoque Diário','Estoque','estoque').replace(',','.')) || 0;
+      if (!mapLD[l]) mapLD[l] = {};
+      mapLD[l][dk] = (mapLD[l][dk] || 0) + est;
+    });
+
+    let c2 = document.getElementById('d3-line-canvas');
+    if (!c2) { c2 = document.createElement('canvas'); c2.id = 'd3-line-canvas'; document.getElementById('d3-line-wrap').appendChild(c2); }
+    if (d3LineChart) d3LineChart.destroy();
+
+    d3LineChart = new Chart(c2, {
+      type: 'line',
+      data: {
+        labels: dias.map(d2FormatarData),
+        datasets: lojas.map((l,i) => ({
+          label: deParaMap[l] || `Filial ${l}`,
+          data: dias.map(d => mapLD[l]?.[d] ?? null),
+          borderColor: PALETTE[i % PALETTE.length],
+          backgroundColor: PALETTE[i % PALETTE.length] + '22',
+          borderWidth: 2, pointRadius: dias.length <= 60 ? 2 : 0,
+          pointHoverRadius: 4, tension: 0.3, fill: false, spanGaps: true,
+        }))
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode:'index', intersect:false },
+        plugins: {
+          legend: { labels:{ color:'#8891aa', font:{family:'DM Mono',size:10}, boxWidth:10 } },
+          tooltip: { backgroundColor:'#1c2030', borderColor:'#252a3a', borderWidth:1, titleColor:'#4fffb0', bodyColor:'#e8ecf5', titleFont:{family:'DM Mono',size:11}, bodyFont:{family:'Figtree',size:12}, padding:12 }
+        },
+        scales: {
+          x: { ticks:{ color:'#8891aa', font:{family:'DM Mono',size:9}, maxRotation:45, minRotation:45, autoSkip:true, maxTicksLimit:30 }, grid:{color:'#1c2030'} },
+          y: { ticks:{ color:'#8891aa', font:{family:'DM Mono',size:11}, callback:v=>v.toLocaleString('pt-BR') }, grid:{color:'#252a3a'} }
+        }
+      }
+    });
+  }
+
+  // Tabela
+  const maxQ = byLoja[0]?.qty || 1;
+  const th3 = (label, key) => {
+    const cls = t3Sort.col === key ? ` class="sort-${t3Sort.dir}"` : '';
+    return `<th${cls} onclick="t3OrdenarPor('${key}')">${label}</th>`;
+  };
+  const sorted3 = [...byLoja].sort((a,b) => {
+    let va, vb;
+    if (t3Sort.col === 'loja') { va=+a.loja; vb=+b.loja; }
+    else if (t3Sort.col === 'nome') { va=a.nome.toLowerCase(); vb=b.nome.toLowerCase(); }
+    else { va=a.qty; vb=b.qty; }
+    if (va<vb) return t3Sort.dir==='asc'?-1:1;
+    if (va>vb) return t3Sort.dir==='asc'?1:-1;
+    return 0;
+  });
+  const linhas3 = sorted3.map(r => {
+    const barW = ((r.qty/maxQ)*100).toFixed(1);
+    return `<tr>
+      <td class="td-loja">#${r.loja}</td>
+      <td class="td-nome">${r.nome}</td>
+      <td class="td-qty" style="color:var(--accent2)">${r.qty.toLocaleString('pt-BR')}</td>
+      <td><div class="td-bar-wrap">
+        <div class="td-bar" style="background:linear-gradient(90deg,var(--accent2),#38bdf8);width:${barW}%;max-width:150px"></div>
+      </div></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('d3-table-body').innerHTML = byLoja.length === 0
+    ? '<div class="no-data">Nenhum dado para os filtros selecionados</div>'
+    : `<table><thead><tr>${th3('Filial','loja')}${th3('Nome Fantasia','nome')}${th3('Estoque Atual','qty')}<th>Volume</th></tr></thead><tbody>${linhas3}</tbody></table>`;
+}
+
+function t3OrdenarPor(coluna) {
+  t3Sort.dir = t3Sort.col === coluna && t3Sort.dir === 'desc' ? 'asc' : 'desc';
+  t3Sort.col = coluna;
+  d3Renderizar();
 }
 
 // ── TABS ──────────────────────────────────────────────────────────────────────
