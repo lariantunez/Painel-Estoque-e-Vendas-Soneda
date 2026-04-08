@@ -776,6 +776,12 @@ function d2FormatarData(iso) {
   return `${d}/${m}/${y}`;
 }
 
+function d2DiaSemana(iso) {
+  const [y,m,d] = iso.split('-');
+  const dt = new Date(+y, +m-1, +d);
+  return ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][dt.getDay()];
+}
+
 function d2Renderizar() {
   const dados  = d2Filtrar();
   const porDia = d2AgruparPorDia(dados);
@@ -879,7 +885,9 @@ function d2Renderizar() {
   // Tabela
   const sorted2 = [...porDia].sort((a,b) => {
     let va, vb;
+    const ORD_DIA = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
     if (t2Sort.col === 'data') { va = a.data; vb = b.data; }
+    else if (t2Sort.col === 'dia') { va = ORD_DIA.indexOf(d2DiaSemana(a.data)); vb = ORD_DIA.indexOf(d2DiaSemana(b.data)); }
     else { va = a.qty; vb = b.qty; }
     if (va < vb) return t2Sort.dir === 'asc' ? -1 : 1;
     if (va > vb) return t2Sort.dir === 'asc' ? 1 : -1;
@@ -896,8 +904,11 @@ function d2Renderizar() {
   const linhas = sorted2.map(r => {
     const pct  = total > 0 ? ((r.qty/total)*100).toFixed(1) : 0;
     const barW = ((r.qty/maxQ2)*100).toFixed(1);
+    const dia  = d2DiaSemana(r.data);
+    const fds  = dia === 'Sáb' || dia === 'Dom';
     return `<tr>
       <td class="td-loja">${d2FormatarData(r.data)}</td>
+      <td class="td-loja" style="color:${fds ? '#ff9f6b' : 'var(--muted)'}">${dia}</td>
       <td class="td-qty">${r.qty.toLocaleString('pt-BR')}</td>
       <td><div class="td-bar-wrap">
         <div class="td-bar" style="width:${barW}%;max-width:150px"></div>
@@ -913,7 +924,7 @@ function d2Renderizar() {
   </tr>`;
 
   document.getElementById('d2-table-body').innerHTML = `<table>
-    <thead><tr>${th2('Data','data')}${th2('Qtd Vendida','qty')}<th>Participação</th></tr></thead>
+    <thead><tr>${th2('Data','data')}${th2('Dia','dia')}${th2('Qtd Vendida','qty')}<th>Participação</th></tr></thead>
     <tbody>${linhas}${totalLinha}</tbody>
   </table>`;
 }
