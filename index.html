@@ -146,6 +146,12 @@
       <div>
         <div class="chart-title">Quantidade Vendida por Filial</div>
         <div class="chart-subtitle" id="chart-sub">Todos os períodos</div>
+        <div id="loja-ativa" style="display:none;align-items:center;margin-top:10px;gap:6px"></div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div class="kpi-label">Total do período</div>
+        <div class="kpi-value" id="chart-total-val" style="font-size:2.2rem">—</div>
+        <div class="kpi-sub">unidades vendidas</div>
       </div>
     </div>
     <div class="chart-wrap" id="chart-wrap">
@@ -169,9 +175,10 @@ const PUBLISHED_ID = '2PACX-1vQnD-TDSWC76DBgeWdu3Jvi_AqfzSRca9Isub0y9ic0wT1JOOmI
 const GID_BRUTOS   = '594179647';
 const GID_DEPARA   = '742565184';
 
-let rawData   = [];
-let deParaMap = {};
-let chartInst = null;
+let rawData      = [];
+let deParaMap    = {};
+let chartInst    = null;
+let lojaFiltrada = null;
 
 // ── CSV PARSER ────────────────────────────────────────────────────────────────
 function parseCSV(text) {
@@ -352,17 +359,41 @@ function agruparPorLoja(data) {
 
 // ── RENDER PRINCIPAL ──────────────────────────────────────────────────────────
 function renderizar() {
-  const dados  = filtrar();
-  const byLoja = agruparPorLoja(dados);
+  const dadosTodos = filtrar();
+  const byLojaAll  = agruparPorLoja(dadosTodos);
 
   const ano = document.getElementById('f-ano').value;
   const mes = document.getElementById('f-mes').value;
   document.getElementById('chart-sub').textContent =
     [ano,mes].filter(Boolean).join(' · ') || 'Todos os períodos';
 
-  renderKPIs(byLoja);
-  renderGrafico(byLoja);
-  renderTabela(byLoja);
+  // Indicador de loja ativa
+  const lojaAtivaEl = document.getElementById('loja-ativa');
+  if (lojaFiltrada) {
+    const info = byLojaAll.find(r => r.loja === lojaFiltrada);
+    lojaAtivaEl.style.display = 'flex';
+    lojaAtivaEl.innerHTML = `
+      <span style="color:var(--accent);font-family:'DM Mono',monospace;font-size:0.72rem;letter-spacing:.5px">
+        ▶ FILTRANDO: #${lojaFiltrada}${info ? ' · ' + info.nome : ''}
+      </span>
+      <button onclick="limparFiltroLoja()" style="background:none;border:1px solid var(--border);color:var(--muted);cursor:pointer;font-family:'DM Mono',monospace;font-size:0.68rem;padding:2px 10px;border-radius:20px;margin-left:6px;transition:all .2s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">✕ limpar</button>`;
+  } else {
+    lojaAtivaEl.style.display = 'none';
+  }
+
+  // KPIs e tabela filtram pela loja selecionada; gráfico mostra todas
+  const byLojaFiltrada = lojaFiltrada
+    ? byLojaAll.filter(r => r.loja === lojaFiltrada)
+    : byLojaAll;
+
+  renderKPIs(byLojaFiltrada);
+  renderGrafico(byLojaAll);
+  renderTabela(byLojaFiltrada);
+}
+
+function limparFiltroLoja() {
+  lojaFiltrada = null;
+  renderizar();
 }
 
 function renderKPIs(byLoja) {
@@ -376,6 +407,9 @@ function renderKPIs(byLoja) {
 }
 
 function renderGrafico(byLoja) {
+  const total = byLoja.reduce((s,r) => s + r.qty, 0);
+  document.getElementById('chart-total-val').textContent = total.toLocaleString('pt-BR');
+
   if (byLoja.length === 0) {
     setEstado('Nenhum dado para os filtros selecionados.');
     return;
@@ -391,12 +425,22 @@ function renderGrafico(byLoja) {
 
   const labels = byLoja.map(r => `#${r.loja} · ${r.nome}`);
   const values = byLoja.map(r => r.qty);
-  const total  = values.reduce((s,v) => s+v, 0);
   const n      = byLoja.length;
 
-  const bgColors = byLoja.map((_,i) => {
+  const bgColors = byLoja.map((r, i) => {
+    if (lojaFiltrada) {
+      return r.loja === lojaFiltrada ? 'rgba(200,241,53,0.95)' : 'rgba(37,42,58,0.45)';
+    }
     const t = n > 1 ? i/(n-1) : 0;
     return `rgba(${Math.round(200-t*80)},${Math.round(241-t*100)},${Math.round(53+t*100)},0.85)`;
+  });
+
+  const borderColors = byLoja.map((r, i) => {
+    if (lojaFiltrada) {
+      return r.loja === lojaFiltrada ? 'rgba(200,241,53,1)' : 'rgba(37,42,58,0.2)';
+    }
+    const t = n > 1 ? i/(n-1) : 0;
+    return `rgba(${Math.round(200-t*80)},${Math.round(241-t*100)},${Math.round(53+t*100)},1)`;
   });
 
   if (chartInst) chartInst.destroy();
@@ -405,54 +449,66 @@ function renderGrafico(byLoja) {
     type: 'bar',
     data: {
       labels,
-      datasets: [
-        {
-          label: 'Qtd Vendida',
-          data: values,
-          backgroundColor: bgColors,
-          borderColor: bgColors.map(c => c.replace('0.85)','1)')),
-          borderWidth: 1.5,
-          borderRadius: 6,
-        },
-        {
-          label: `Total Geral — ${total.toLocaleString('pt-BR')} un.`,
-          data: Array(n).fill(Math.round(total / Math.max(n,1))),
-          type: 'line',
-          borderColor: 'rgba(255,255,255,0.18)',
-          borderDash: [6,4],
-          borderWidth: 1.5,
-          pointRadius: 0,
-          fill: false,
-        }
-      ]
+      datasets: [{
+        label: 'Qtd Vendida',
+        data: values,
+        backgroundColor: bgColors,
+        borderColor: borderColors,
+        borderWidth: 1.5,
+        borderRadius: 6,
+      }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      interaction: { mode:'index', intersect:false },
+      cursor: 'pointer',
+      onClick: (evt, elements) => {
+        if (elements.length > 0) {
+          const idx  = elements[0].index;
+          const loja = byLoja[idx].loja;
+          lojaFiltrada = lojaFiltrada === loja ? null : loja;
+          renderizar();
+        }
+      },
+      interaction: { mode: 'index', intersect: false },
       plugins: {
-        legend: { labels:{ color:'#8891aa', font:{family:'DM Mono',size:11}, boxWidth:12 } },
+        legend: { display: false },
         tooltip: {
-          backgroundColor:'#1c2030', borderColor:'#252a3a', borderWidth:1,
-          titleColor:'#c8f135', bodyColor:'#e8ecf5',
-          titleFont:{family:'DM Mono',size:11}, bodyFont:{family:'Figtree',size:13}, padding:14,
+          backgroundColor: '#1c2030', borderColor: '#252a3a', borderWidth: 1,
+          titleColor: '#c8f135', bodyColor: '#e8ecf5',
+          titleFont: { family: 'DM Mono', size: 11 },
+          bodyFont: { family: 'Figtree', size: 13 },
+          padding: 14,
           callbacks: {
-            label: ctx => {
-              if (ctx.datasetIndex === 0) {
-                const pct = total > 0 ? ((ctx.parsed.y/total)*100).toFixed(1) : 0;
-                return ` ${ctx.parsed.y.toLocaleString('pt-BR')} un. (${pct}% do total)`;
-              }
-              return ` Média p/ loja: ${ctx.parsed.y.toLocaleString('pt-BR')} un.`;
-            }
+            title: ctx => ctx[0].label,
+            label: ctx => ` ${ctx.parsed.y.toLocaleString('pt-BR')} unidades vendidas`,
           }
         }
       },
       scales: {
-        x: { ticks:{color:'#8891aa',font:{family:'DM Mono',size:11},maxRotation:35}, grid:{color:'#1c2030'} },
-        y: { ticks:{color:'#8891aa',font:{family:'DM Mono',size:11},callback:v=>v.toLocaleString('pt-BR')}, grid:{color:'#252a3a'} }
+        x: {
+          ticks: {
+            color: ctx => {
+              if (!lojaFiltrada) return '#8891aa';
+              return byLoja[ctx.index]?.loja === lojaFiltrada ? '#c8f135' : '#3a4060';
+            },
+            font: ctx => {
+              const sel = lojaFiltrada && byLoja[ctx.index]?.loja === lojaFiltrada;
+              return { family: 'DM Mono', size: sel ? 12 : 11, weight: sel ? '600' : '400' };
+            },
+            maxRotation: 35,
+          },
+          grid: { color: '#1c2030' }
+        },
+        y: {
+          ticks: { color: '#8891aa', font: { family: 'DM Mono', size: 11 }, callback: v => v.toLocaleString('pt-BR') },
+          grid: { color: '#252a3a' }
+        }
       }
     }
   });
+
+  canvas.style.cursor = 'pointer';
 }
 
 function renderTabela(byLoja) {
