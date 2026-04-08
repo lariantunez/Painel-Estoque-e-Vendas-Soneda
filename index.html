@@ -423,7 +423,7 @@ function renderGrafico(byLoja) {
     document.getElementById('chart-wrap').appendChild(canvas);
   }
 
-  const labels = byLoja.map(r => `#${r.loja} · ${r.nome}`);
+  const labels = byLoja.map(r => r.nome);
   const values = byLoja.map(r => r.qty);
   const n      = byLoja.length;
 
@@ -492,11 +492,10 @@ function renderGrafico(byLoja) {
               if (!lojaFiltrada) return '#8891aa';
               return byLoja[ctx.index]?.loja === lojaFiltrada ? '#c8f135' : '#3a4060';
             },
-            font: ctx => {
-              const sel = lojaFiltrada && byLoja[ctx.index]?.loja === lojaFiltrada;
-              return { family: 'DM Mono', size: sel ? 12 : 11, weight: sel ? '600' : '400' };
-            },
-            maxRotation: 35,
+            font: { family: 'DM Mono', size: 9 },
+            maxRotation: 45,
+            minRotation: 45,
+            autoSkip: false,
           },
           grid: { color: '#1c2030' }
         },
