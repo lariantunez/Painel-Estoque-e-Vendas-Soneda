@@ -190,7 +190,78 @@
 <div id="tab-dia" class="tab-panel">
 <main>
   <h1 class="section-title">Venda por Dia</h1>
-  <p class="section-sub">Em construção...</p>
+  <p class="section-sub" id="d2-status-msg">Carregando dados...</p>
+
+  <!-- FILTROS -->
+  <div class="filters-row">
+    <div class="filter-group">
+      <label>Ano</label>
+      <select id="d2-ano"><option value="">Todos</option></select>
+    </div>
+    <div class="filter-group">
+      <label>Mês</label>
+      <select id="d2-mes"><option value="">Todos</option></select>
+    </div>
+    <div class="filter-group">
+      <label>Data início</label>
+      <input type="date" id="d2-di">
+    </div>
+    <div class="filter-group">
+      <label>Data fim</label>
+      <input type="date" id="d2-df">
+    </div>
+    <div class="filter-group">
+      <label>Loja</label>
+      <select id="d2-loja"><option value="">Todas</option></select>
+    </div>
+    <button class="btn-clear" onclick="d2LimparFiltros()">↺ Limpar</button>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-label">Total do Período (Qtd)</div>
+      <div class="kpi-value" id="d2-kpi-total">—</div>
+      <div class="kpi-sub">unidades vendidas</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Dias com Venda</div>
+      <div class="kpi-value" id="d2-kpi-dias">—</div>
+      <div class="kpi-sub">dias no período</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Média Diária</div>
+      <div class="kpi-value" id="d2-kpi-media">—</div>
+      <div class="kpi-sub">unidades / dia</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Melhor Dia</div>
+      <div class="kpi-value" id="d2-kpi-top" style="font-size:1.1rem;padding-top:6px">—</div>
+      <div class="kpi-sub" id="d2-kpi-top-sub">—</div>
+    </div>
+  </div>
+
+  <!-- GRÁFICO -->
+  <div class="chart-card">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">Quantidade Vendida por Dia</div>
+        <div class="chart-subtitle" id="d2-chart-sub">Todos os períodos · Todas as lojas</div>
+      </div>
+    </div>
+    <div class="chart-wrap" id="d2-chart-wrap" style="height:420px">
+      <div class="state-msg" id="d2-chart-state">
+        <div class="spinner"></div>
+        Carregando dados...
+      </div>
+    </div>
+  </div>
+
+  <!-- TABELA -->
+  <div class="table-card" style="margin-top:20px">
+    <div class="table-head"><div class="table-head-title">Detalhamento de Quantidade Vendida por Dia</div></div>
+    <div id="d2-table-body"><div class="no-data">Carregando...</div></div>
+  </div>
 </main>
 </div>
 <!-- /ABA 2 -->
@@ -284,6 +355,8 @@ async function init() {
 
     construirFiltros();
     renderizar();
+    d2ConstruirFiltros();
+    d2Renderizar();
 
   } catch(err) {
     console.error(err);
@@ -571,6 +644,220 @@ function renderTabela(byLoja) {
     <thead><tr>
       <th>Filial</th><th>Nome Fantasia</th><th>Qtd Vendida</th><th>Participação</th>
     </tr></thead>
+    <tbody>${linhas}${totalLinha}</tbody>
+  </table>`;
+}
+
+// ── ABA 2: VENDA POR DIA ──────────────────────────────────────────────────────
+let d2Chart = null;
+
+function d2ConstruirFiltros() {
+  const anos  = [...new Set(rawData.map(r => col(r,'Ano')).filter(Boolean))].sort();
+  const meses = [...new Set(rawData.map(r => col(r,'Mês','Mes')).filter(Boolean))];
+  const ORD   = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  meses.sort((a,b) => ORD.indexOf(a) - ORD.indexOf(b));
+
+  const lojas = [...new Set(rawData.map(r => col(r,'Loja','loja')).filter(Boolean))].sort((a,b) => +a - +b);
+
+  document.getElementById('d2-ano').innerHTML  = '<option value="">Todos</option>' + anos.map(a => `<option>${a}</option>`).join('');
+  document.getElementById('d2-mes').innerHTML  = '<option value="">Todos</option>' + meses.map(m => `<option>${m}</option>`).join('');
+  document.getElementById('d2-loja').innerHTML = '<option value="">Todas</option>' + lojas.map(l => {
+    const nome = deParaMap[l] || `Filial ${l}`;
+    return `<option value="${l}">#${l} · ${nome}</option>`;
+  }).join('');
+
+  ['d2-ano','d2-mes','d2-di','d2-df','d2-loja'].forEach(id =>
+    document.getElementById(id).addEventListener('change', d2Renderizar)
+  );
+
+  document.getElementById('d2-status-msg').textContent =
+    document.getElementById('status-msg').textContent;
+}
+
+function d2LimparFiltros() {
+  ['d2-ano','d2-mes','d2-di','d2-df','d2-loja'].forEach(id => document.getElementById(id).value = '');
+  d2Renderizar();
+}
+
+function d2Filtrar() {
+  const ano  = document.getElementById('d2-ano').value;
+  const mes  = document.getElementById('d2-mes').value;
+  const di   = document.getElementById('d2-di').value;
+  const df   = document.getElementById('d2-df').value;
+  const loja = document.getElementById('d2-loja').value;
+
+  return rawData.filter(r => {
+    if (ano  && col(r,'Ano') !== ano) return false;
+    if (mes  && col(r,'Mês','Mes') !== mes) return false;
+    if (loja && col(r,'Loja','loja') !== loja) return false;
+    if (di || df) {
+      const raw = col(r,'Data','data');
+      if (raw) {
+        const p  = raw.split('/');
+        const dt = p.length === 3 ? new Date(+p[2], +p[0]-1, +p[1]) : new Date(raw);
+        if (!isNaN(dt)) {
+          const s = dt.toISOString().split('T')[0];
+          if (di && s < di) return false;
+          if (df && s > df) return false;
+        }
+      }
+    }
+    return true;
+  });
+}
+
+function d2ParseData(raw) {
+  if (!raw) return null;
+  const p = raw.split('/');
+  if (p.length === 3) {
+    const d = new Date(+p[2], +p[0]-1, +p[1]);
+    return isNaN(d) ? null : d;
+  }
+  const d = new Date(raw);
+  return isNaN(d) ? null : d;
+}
+
+function d2AgruparPorDia(data) {
+  const map = {};
+  data.forEach(r => {
+    const dt = d2ParseData(col(r,'Data','data'));
+    if (!dt) return;
+    const key = dt.toISOString().split('T')[0]; // YYYY-MM-DD
+    const qty = parseFloat(col(r,'Venda (Qtd)','Venda Nf Quantidade','Venda Pdv Quantidade').replace(',','.')) || 0;
+    if (!map[key]) map[key] = { data: key, qty: 0 };
+    map[key].qty += qty;
+  });
+  return Object.values(map).sort((a,b) => a.data.localeCompare(b.data));
+}
+
+function d2FormatarData(iso) {
+  const [y,m,d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+function d2Renderizar() {
+  const dados  = d2Filtrar();
+  const porDia = d2AgruparPorDia(dados);
+
+  const ano  = document.getElementById('d2-ano').value;
+  const mes  = document.getElementById('d2-mes').value;
+  const loja = document.getElementById('d2-loja').value;
+  const nomeLoja = loja ? (document.getElementById('d2-loja').selectedOptions[0]?.text || '') : 'Todas as lojas';
+
+  document.getElementById('d2-chart-sub').textContent =
+    ([ano, mes].filter(Boolean).join(' · ') || 'Todos os períodos') + ' · ' + nomeLoja;
+
+  // KPIs
+  const total = porDia.reduce((s,r) => s + r.qty, 0);
+  const dias  = porDia.filter(r => r.qty > 0).length;
+  const media = dias > 0 ? (total / dias) : 0;
+  const top   = porDia.reduce((a,b) => b.qty > (a?.qty||0) ? b : a, null);
+
+  document.getElementById('d2-kpi-total').textContent   = total.toLocaleString('pt-BR');
+  document.getElementById('d2-kpi-dias').textContent    = dias;
+  document.getElementById('d2-kpi-media').textContent   = Math.round(media).toLocaleString('pt-BR');
+  document.getElementById('d2-kpi-top').textContent     = top ? d2FormatarData(top.data) : '—';
+  document.getElementById('d2-kpi-top-sub').textContent = top ? `${top.qty.toLocaleString('pt-BR')} un.` : '—';
+
+  // Gráfico
+  const d2State = document.getElementById('d2-chart-state');
+  if (porDia.length === 0) {
+    if (d2State) { d2State.style.display='flex'; d2State.innerHTML='Nenhum dado para os filtros selecionados.'; }
+    if (d2Chart) { d2Chart.destroy(); d2Chart = null; }
+    document.getElementById('d2-table-body').innerHTML = '<div class="no-data">Nenhum dado para os filtros selecionados</div>';
+    return;
+  }
+  if (d2State) d2State.style.display = 'none';
+
+  let canvas = document.getElementById('d2-myChart');
+  if (!canvas) {
+    canvas = document.createElement('canvas');
+    canvas.id = 'd2-myChart';
+    document.getElementById('d2-chart-wrap').appendChild(canvas);
+  }
+
+  const labels = porDia.map(r => d2FormatarData(r.data));
+  const values = porDia.map(r => r.qty);
+
+  if (d2Chart) d2Chart.destroy();
+
+  d2Chart = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Qtd Vendida',
+        data: values,
+        borderColor: 'rgba(200,241,53,0.9)',
+        backgroundColor: 'rgba(200,241,53,0.08)',
+        borderWidth: 2,
+        pointRadius: porDia.length <= 60 ? 3 : 0,
+        pointHoverRadius: 5,
+        pointBackgroundColor: 'rgba(200,241,53,1)',
+        fill: true,
+        tension: 0.3,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1c2030', borderColor: '#252a3a', borderWidth: 1,
+          titleColor: '#c8f135', bodyColor: '#e8ecf5',
+          titleFont: { family: 'DM Mono', size: 11 },
+          bodyFont: { family: 'Figtree', size: 13 },
+          padding: 14,
+          callbacks: {
+            label: ctx => ` ${ctx.parsed.y.toLocaleString('pt-BR')} unidades vendidas`
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: {
+            color: '#8891aa',
+            font: { family: 'DM Mono', size: 9 },
+            maxRotation: 45,
+            minRotation: 45,
+            autoSkip: true,
+            maxTicksLimit: 40,
+          },
+          grid: { color: '#1c2030' }
+        },
+        y: {
+          ticks: { color: '#8891aa', font: { family: 'DM Mono', size: 11 }, callback: v => v.toLocaleString('pt-BR') },
+          grid: { color: '#252a3a' }
+        }
+      }
+    }
+  });
+
+  // Tabela
+  const maxQ = porDia[0] ? Math.max(...values) : 1;
+  const linhas = [...porDia].sort((a,b) => b.qty - a.qty).map(r => {
+    const pct  = total > 0 ? ((r.qty/total)*100).toFixed(1) : 0;
+    const barW = ((r.qty/maxQ)*100).toFixed(1);
+    return `<tr>
+      <td class="td-loja">${d2FormatarData(r.data)}</td>
+      <td class="td-qty">${r.qty.toLocaleString('pt-BR')}</td>
+      <td><div class="td-bar-wrap">
+        <div class="td-bar" style="width:${barW}%;max-width:150px"></div>
+        <span style="font-size:.78rem;color:var(--text-dim);font-family:'DM Mono',monospace">${pct}%</span>
+      </div></td>
+    </tr>`;
+  }).join('');
+
+  const totalLinha = `<tr style="background:var(--surface2)">
+    <td class="td-loja" style="color:var(--accent)">TOTAL</td>
+    <td class="td-qty" style="color:var(--accent)">${total.toLocaleString('pt-BR')}</td>
+    <td><span style="font-size:.78rem;color:var(--accent);font-family:'DM Mono',monospace">100%</span></td>
+  </tr>`;
+
+  document.getElementById('d2-table-body').innerHTML = `<table>
+    <thead><tr><th>Data</th><th>Qtd Vendida</th><th>Participação</th></tr></thead>
     <tbody>${linhas}${totalLinha}</tbody>
   </table>`;
 }
