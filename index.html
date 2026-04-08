@@ -70,7 +70,11 @@
   .table-head { padding: 20px 24px 12px; border-bottom: 1px solid var(--border); }
   .table-head-title { font-family: 'DM Serif Display', serif; font-size: 1.1rem; }
   table { width: 100%; border-collapse: collapse; }
-  thead th { font-family: 'DM Mono', monospace; font-size: 0.63rem; letter-spacing: 0.5px; text-transform: uppercase; color: var(--muted); padding: 9px 18px; text-align: left; border-bottom: 1px solid var(--border); }
+  thead th { font-family: 'DM Mono', monospace; font-size: 0.63rem; letter-spacing: 0.5px; text-transform: uppercase; color: var(--muted); padding: 9px 18px; text-align: left; border-bottom: 1px solid var(--border); cursor: pointer; user-select: none; white-space: nowrap; }
+  thead th:hover { color: var(--text); }
+  thead th.sort-asc::after  { content: ' ↑'; color: var(--accent); }
+  thead th.sort-desc::after { content: ' ↓'; color: var(--accent); }
+  thead th.sort-asc, thead th.sort-desc { color: var(--accent); }
   tbody tr { border-bottom: 1px solid var(--border); transition: background .15s; }
   tbody tr:last-child { border-bottom: none; }
   tbody tr:hover { background: var(--surface2); }
@@ -276,6 +280,8 @@ let rawData      = [];
 let deParaMap    = {};
 let chartInst    = null;
 let lojaFiltrada = null;
+let t1Sort       = { col: 'qty', dir: 'desc' };
+let t2Sort       = { col: 'qty', dir: 'desc' };
 
 // ── CSV PARSER ────────────────────────────────────────────────────────────────
 function parseCSV(text) {
@@ -609,17 +615,39 @@ function renderGrafico(byLoja) {
   canvas.style.cursor = 'pointer';
 }
 
+function t1OrdenarPor(coluna) {
+  t1Sort.dir = t1Sort.col === coluna && t1Sort.dir === 'desc' ? 'asc' : 'desc';
+  t1Sort.col = coluna;
+  renderizar();
+}
+
 function renderTabela(byLoja) {
   const container = document.getElementById('table-body');
   const total = byLoja.reduce((s,r) => s+r.qty, 0);
-  const maxQ  = byLoja[0]?.qty || 1;
 
   if (byLoja.length === 0) {
     container.innerHTML = '<div class="no-data">Nenhum dado para os filtros selecionados</div>';
     return;
   }
 
-  const linhas = byLoja.map(r => {
+  const sorted = [...byLoja].sort((a,b) => {
+    let va, vb;
+    if (t1Sort.col === 'loja') { va = +a.loja; vb = +b.loja; }
+    else if (t1Sort.col === 'nome') { va = a.nome.toLowerCase(); vb = b.nome.toLowerCase(); }
+    else { va = a.qty; vb = b.qty; }
+    if (va < vb) return t1Sort.dir === 'asc' ? -1 : 1;
+    if (va > vb) return t1Sort.dir === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const maxQ = Math.max(...sorted.map(r => r.qty), 1);
+
+  const th = (label, key) => {
+    const cls = t1Sort.col === key ? ` class="sort-${t1Sort.dir}"` : '';
+    return `<th${cls} onclick="t1OrdenarPor('${key}')">${label}</th>`;
+  };
+
+  const linhas = sorted.map(r => {
     const pct  = total > 0 ? ((r.qty/total)*100).toFixed(1) : 0;
     const barW = ((r.qty/maxQ)*100).toFixed(1);
     return `<tr>
@@ -642,7 +670,7 @@ function renderTabela(byLoja) {
 
   container.innerHTML = `<table>
     <thead><tr>
-      <th>Filial</th><th>Nome Fantasia</th><th>Qtd Vendida</th><th>Participação</th>
+      ${th('Filial','loja')}${th('Nome Fantasia','nome')}${th('Qtd Vendida','qty')}<th>Participação</th>
     </tr></thead>
     <tbody>${linhas}${totalLinha}</tbody>
   </table>`;
@@ -836,10 +864,25 @@ function d2Renderizar() {
   });
 
   // Tabela
-  const maxQ = porDia[0] ? Math.max(...values) : 1;
-  const linhas = [...porDia].sort((a,b) => b.qty - a.qty).map(r => {
+  const sorted2 = [...porDia].sort((a,b) => {
+    let va, vb;
+    if (t2Sort.col === 'data') { va = a.data; vb = b.data; }
+    else { va = a.qty; vb = b.qty; }
+    if (va < vb) return t2Sort.dir === 'asc' ? -1 : 1;
+    if (va > vb) return t2Sort.dir === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const maxQ2 = Math.max(...porDia.map(r => r.qty), 1);
+
+  const th2 = (label, key) => {
+    const cls = t2Sort.col === key ? ` class="sort-${t2Sort.dir}"` : '';
+    return `<th${cls} onclick="t2OrdenarPor('${key}')">${label}</th>`;
+  };
+
+  const linhas = sorted2.map(r => {
     const pct  = total > 0 ? ((r.qty/total)*100).toFixed(1) : 0;
-    const barW = ((r.qty/maxQ)*100).toFixed(1);
+    const barW = ((r.qty/maxQ2)*100).toFixed(1);
     return `<tr>
       <td class="td-loja">${d2FormatarData(r.data)}</td>
       <td class="td-qty">${r.qty.toLocaleString('pt-BR')}</td>
@@ -857,9 +900,15 @@ function d2Renderizar() {
   </tr>`;
 
   document.getElementById('d2-table-body').innerHTML = `<table>
-    <thead><tr><th>Data</th><th>Qtd Vendida</th><th>Participação</th></tr></thead>
+    <thead><tr>${th2('Data','data')}${th2('Qtd Vendida','qty')}<th>Participação</th></tr></thead>
     <tbody>${linhas}${totalLinha}</tbody>
   </table>`;
+}
+
+function t2OrdenarPor(coluna) {
+  t2Sort.dir = t2Sort.col === coluna && t2Sort.dir === 'desc' ? 'asc' : 'desc';
+  t2Sort.col = coluna;
+  d2Renderizar();
 }
 
 // ── TABS ──────────────────────────────────────────────────────────────────────
